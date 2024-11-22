@@ -16,3 +16,21 @@ Our tasks:
     - Boosting
 4. tune models
 5. test and compare models
+
+## Running the project
+
+<code>
+    
+    source env/bin/activate
+    
+    pip install -r requirements.txt
+    
+</code>
+
+## Saving new packages
+
+<code>
+
+    pip freeze -> requirements.txt
+
+</code>
