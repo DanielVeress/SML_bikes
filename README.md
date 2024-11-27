@@ -16,10 +16,13 @@ Our tasks:
     - Boosting
 4. tune models
 5. test and compare models
+6. writing report
 
-## Running the project
+## Setup (env creation and package install)
 
 <code>
+    
+    python -m venv env
     
     source env/bin/activate
     
@@ -27,10 +30,10 @@ Our tasks:
     
 </code>
 
-## Saving new packages
+## Saving new packages into requirements.txt
 
 <code>
 
-    pip freeze -> requirements.txt
+    pip freeze > requirements.txt
 
 </code>
