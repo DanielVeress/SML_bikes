@@ -1,32 +1,7 @@
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from utils.constants import SEED
-
-
-def __split(df:pd.DataFrame, prec:dict, info=False):
-    # setting and checking parameters
-    if sum(prec.values()) != 1.0:
-        raise ValueError(f'Split precentages do not add up to 1.0! Precentages: {prec.values()}')
-    # shuffling
-    data = df.sample(frac=1, random_state=SEED, ignore_index=True)
-    
-    splits = []
-    split_start_index = 0
-    data_size = data.shape[0]
-    for split_name, p in prec.items():
-        # calculate current split's end index
-        split_size = data_size * p
-        split_end_index = int(split_start_index + split_size if split_start_index + split_size < data_size else data_size)
-        
-        if info: print(f'{split_name} -> range=[{split_start_index}-{split_end_index-1}] size={split_end_index-split_start_index}')
-        
-        # get data for current split
-        split_data = data.iloc[split_start_index:split_end_index]
-        splits.append(split_data)
-
-        # set the next split's start
-        split_start_index = split_end_index
-    return splits
 
 
 def process_data():
@@ -50,19 +25,18 @@ def process_data():
 
 
     ## 3. Shuffle and split
-    prec = {
-        'train': 0.7,
-        'val': 0.15,
-        'test': 0.15
-    }
-    splits = __split(df, prec=prec, info=True)
+    X = processed_df.iloc[:, :-1]
+    Y = processed_df.iloc[:, -1]
 
-    # separate the target and the data
-    X_train, Y_train = splits[0].iloc[:,:-1], splits[0].iloc[:,-1]
-    X_val, Y_val = splits[1].iloc[:,:-1], splits[1].iloc[:,-1]
-    X_test, Y_test = splits[2].iloc[:,:-1], splits[2].iloc[:,-1]
+    X_train, X_test = train_test_split(X, test_size=0.15, random_state=SEED, shuffle=True)
+    Y_train, Y_test = train_test_split(Y, test_size=0.15, random_state=SEED, shuffle=True)
 
-    return X_train, X_val, X_test, Y_train, Y_val, Y_test
+    print('X train shape:', X_train.shape)
+    print('Y train shape:', Y_train.shape)
+    print('X test shape:', X_test.shape)
+    print('Y test shape:', Y_test.shape)
+
+    return X_train, X_test, Y_train, Y_test
 
 
 if __name__ == '__main__':
