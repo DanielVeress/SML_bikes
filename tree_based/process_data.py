@@ -71,7 +71,7 @@ def create_splits(df:pd.DataFrame, split_prec:dict, info=False) -> list[pd.DataF
     return splits
 
 
-def process_data():
+def process_data(split_prec: dict, scaler: str):
     # find the project directory and load the data
     project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     data_path = os.path.join(project_dir, 'data', 'training_data_fall2024.csv')
@@ -82,24 +82,13 @@ def process_data():
     # map the target column to 1/0 (if not already)
     if processed_df['increase_stock'].dtype is not np.int64:
         processed_df['increase_stock'] = processed_df['increase_stock'].map({"high_bike_demand":1, "low_bike_demand":0})
-
     
     ## 2. Create and drop features
     processed_df = create_new_features(processed_df, info=True)
 
     ## 3. Shuffle and split
-    split_prec = {
-        'train': 0.7, 
-        'valid': 0.15, 
-        'test': 0.15
-    }
-    X_train, X_valid, X_test, Y_train, Y_valid, Y_test = create_splits(processed_df, split_prec, info=True)
-    #X_train, X_test, Y_train, Y_test = create_splits(processed_df, split_prec, info=True)
-    #X_train, Y_train = create_splits(processed_df, split_prec, info=True)
-    
-    return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
-    #return X_train, X_test, Y_train, Y_test
-    #return X_train, Y_train
+    splits = create_splits(processed_df, split_prec, info=True)
+    return splits
 
 
 if __name__ == '__main__':
