@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import sklearn.preprocessing as skl_pre
 from utils.constants import SEED
 
 
@@ -88,6 +89,10 @@ def process_data(split_prec: dict, scaler: str):
 
     ## 3. Shuffle and split
     splits = create_splits(processed_df, split_prec, info=True)
+    print(splits[0][0])
+    
+
+
     return splits
 
 
