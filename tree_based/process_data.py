@@ -7,7 +7,7 @@ import sklearn.preprocessing as skl_pre
 from utils.constants import SEED
 
 
-def create_new_features(df:pd.DataFrame, info=False) -> pd.DataFrame:
+def create_new_features(df:pd.DataFrame, info=False, dropped_columns = []) -> pd.DataFrame:
     '''Drops and adds/creates new features'''
 
     extended_df = df.copy()
@@ -15,6 +15,8 @@ def create_new_features(df:pd.DataFrame, info=False) -> pd.DataFrame:
 
     # drop snow (it only has 0 values -> no information)
     extended_df.drop('snow', axis=1, inplace=True)
+    for column in dropped_columns:
+        extended_df.drop(column, axis=1)
 
     # add new (derived/composite) features
     # TODO
@@ -32,7 +34,7 @@ def create_new_features(df:pd.DataFrame, info=False) -> pd.DataFrame:
     return extended_df
 
 
-def create_splits(df:pd.DataFrame, split_prec:dict, info=False) -> list[pd.DataFrame]:
+def create_splits(df:pd.DataFrame, split_prec:dict, info=False, is_random = False) -> list[pd.DataFrame]:
     '''Creates splits from a dataframe'''
 
     # check if they add up to 1
@@ -76,7 +78,7 @@ def create_splits(df:pd.DataFrame, split_prec:dict, info=False) -> list[pd.DataF
     return splits
 
 
-def process_data(split_prec: dict, scaler):
+def process_data(split_prec: dict, scaler = None,dropped_columns = [], is_random = False):
     # find the project directory and load the data
     project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     data_path = os.path.join(project_dir, 'data', 'training_data_fall2024.csv')
@@ -89,10 +91,10 @@ def process_data(split_prec: dict, scaler):
         processed_df['increase_stock'] = processed_df['increase_stock'].map({"high_bike_demand":1, "low_bike_demand":0})
     
     ## 2. Create and drop features
-    processed_df = create_new_features(processed_df, info=True)
+    processed_df = create_new_features(processed_df, info=True,dropped_columns=dropped_columns)
 
     ## 3. Shuffle and split
-    splits = create_splits(processed_df, split_prec, info=True)
+    splits = create_splits(processed_df, split_prec, info=True, is_random=is_random)
 
     #if the scaler needs to be fitted to the data that is done here
     #the scaler is fitted to the training data and then the validation and testing X data is fitted 
