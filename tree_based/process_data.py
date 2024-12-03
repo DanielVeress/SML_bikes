@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import sklearn
 import sklearn.preprocessing as skl_pre
 from utils.constants import SEED
 
@@ -18,6 +19,9 @@ def create_new_features(df:pd.DataFrame, info=False) -> pd.DataFrame:
     # add new (derived/composite) features
     # TODO
     # e.g. create separate columns for each day of the week
+    
+    #making column for Farenheit since it is the superior temperature measure
+    extended_df["temp_fahrenheit"] = round((extended_df["temp"] * 9/5) + 32)
     
     extended_columns = extended_df.columns
     if info:
@@ -72,7 +76,7 @@ def create_splits(df:pd.DataFrame, split_prec:dict, info=False) -> list[pd.DataF
     return splits
 
 
-def process_data(split_prec: dict, scaler: str):
+def process_data(split_prec: dict, scaler):
     # find the project directory and load the data
     project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     data_path = os.path.join(project_dir, 'data', 'training_data_fall2024.csv')
@@ -89,9 +93,18 @@ def process_data(split_prec: dict, scaler: str):
 
     ## 3. Shuffle and split
     splits = create_splits(processed_df, split_prec, info=True)
-    print(splits[0][0])
-    
 
+    #if the scaler needs to be fitted to the data that is done here
+    #the scaler is fitted to the training data and then the validation and testing X data is fitted 
+    #with the scaler that the training data was fitted with
+    if type(scaler) == skl_pre._data.StandardScaler or type(scaler) == skl_pre._data.MinMaxScaler:
+        scaler = scaler.fit(splits[0])
+        splits[0] = scaler.transform(splits[0])
+        if len(splits) >= 4:
+            splits[1] = scaler.transform(splits[1])
+        if len(splits) > 4:
+            splits[2] = scaler.transform(splits[2])
+    # print(splits)
 
     return splits
 
