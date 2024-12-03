@@ -97,8 +97,8 @@ def create_splits(df:pd.DataFrame, split_prec:dict, info=False, is_random = Fals
 
 def process_data(split_prec: dict, scaler = None,dropped_columns = [], is_random = False):
     # find the project directory and load the data
-    project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    data_path = os.path.join(project_dir, 'data', 'training_data_fall2024.csv')
+    project_dir = os.path.abspath(os.path.join('..'))
+    data_path = os.path.join(project_dir,'data', 'training_data_fall2024.csv')
     df = pd.read_csv(data_path)
 
     ## 1. Convert to numerical
