@@ -51,21 +51,38 @@ def create_splits(df:pd.DataFrame, split_prec:dict, info=False, is_random = Fals
 
     # split into sets
     splits = None
-    if len(split_prec.keys()) == 3:         # train, valid, test
-        corrected_valid_prec = split_prec['valid'] / (1-split_prec['train'])
-        X_train, remainder = train_test_split(X, train_size=split_prec['train'], random_state=SEED, shuffle=True)
-        X_valid, X_test = train_test_split(remainder, train_size=corrected_valid_prec, random_state=SEED, shuffle=True)
-        Y_train, remainder = train_test_split(Y, train_size=split_prec['train'], random_state=SEED, shuffle=True)
-        Y_valid, Y_test = train_test_split(remainder, train_size=corrected_valid_prec, random_state=SEED, shuffle=True)
-        splits = [X_train, X_valid, X_test, Y_train, Y_valid, Y_test]
-    elif len(split_prec.keys()) == 2:       # train, test
-        X_train, X_test = train_test_split(X, train_size=split_prec['train'], random_state=SEED, shuffle=True)
-        Y_train, Y_test = train_test_split(Y, train_size=split_prec['train'], random_state=SEED, shuffle=True)
-        splits = [X_train, X_test, Y_train, Y_test]
-    elif len(split_prec.keys()) == 1:       # train
-        X_train = X.sample(frac=1.0, replace=False, random_state=SEED)
-        Y_train = Y.sample(frac=1.0, replace=False, random_state=SEED)
-        splits = [X_train, Y_train]
+    if is_random == False:
+        if len(split_prec.keys()) == 3:         # train, valid, test
+            corrected_valid_prec = split_prec['valid'] / (1-split_prec['train'])
+            X_train, remainder = train_test_split(X, train_size=split_prec['train'], random_state=SEED, shuffle=True)
+            X_valid, X_test = train_test_split(remainder, train_size=corrected_valid_prec, random_state=SEED, shuffle=True)
+            Y_train, remainder = train_test_split(Y, train_size=split_prec['train'], random_state=SEED, shuffle=True)
+            Y_valid, Y_test = train_test_split(remainder, train_size=corrected_valid_prec, random_state=SEED, shuffle=True)
+            splits = [X_train, X_valid, X_test, Y_train, Y_valid, Y_test]
+        elif len(split_prec.keys()) == 2:       # train, test
+            X_train, X_test = train_test_split(X, train_size=split_prec['train'], random_state=SEED, shuffle=True)
+            Y_train, Y_test = train_test_split(Y, train_size=split_prec['train'], random_state=SEED, shuffle=True)
+            splits = [X_train, X_test, Y_train, Y_test]
+        elif len(split_prec.keys()) == 1:       # train
+            X_train = X.sample(frac=1.0, replace=False, random_state=SEED)
+            Y_train = Y.sample(frac=1.0, replace=False, random_state=SEED)
+            splits = [X_train, Y_train]
+    else:
+        if len(split_prec.keys()) == 3:         # train, valid, test
+            corrected_valid_prec = split_prec['valid'] / (1-split_prec['train'])
+            X_train, remainder = train_test_split(X, train_size=split_prec['train'], shuffle=True)
+            X_valid, X_test = train_test_split(remainder, train_size=corrected_valid_prec, shuffle=True)
+            Y_train, remainder = train_test_split(Y, train_size=split_prec['train'], shuffle=True)
+            Y_valid, Y_test = train_test_split(remainder, train_size=corrected_valid_prec, shuffle=True)
+            splits = [X_train, X_valid, X_test, Y_train, Y_valid, Y_test]
+        elif len(split_prec.keys()) == 2:       # train, test
+            X_train, X_test = train_test_split(X, train_size=split_prec['train'], shuffle=True)
+            Y_train, Y_test = train_test_split(Y, train_size=split_prec['train'], shuffle=True)
+            splits = [X_train, X_test, Y_train, Y_test]
+        elif len(split_prec.keys()) == 1:       # train
+            X_train = X.sample(frac=1.0, replace=False)
+            Y_train = Y.sample(frac=1.0, replace=False)
+            splits = [X_train, Y_train]
 
     # print some info about the splits
     if info:
