@@ -6,17 +6,47 @@ import sklearn
 import sklearn.preprocessing as skl_pre
 from utils.constants import SEED
 
+#an artifical score of if the weather is good or not
+def get_good_weather_score(df:pd.DataFrame):
+    scores = []
+    #look at every row in the dataframe
+    for (i,v) in df.iterrows():
+        #if the snowdepth is greater than 0 we know demand is low from the training data
+        if v["snowdepth"] > 0:
+            scores.append(0)
+        else:
+            #score is a combination of if it is summertime
+            #a factor of the temperature
+            #a factor of the dewpoint
+            #an inverse factor of humidity
+            #an inverse factor of windspeed
+            num = v["summertime"] + v["temp"]/27 + v["dew"]/15 + 1/(v['humidity']+20) + 1/(v["windspeed"]+10)
+            scores.append(num)
+    return np.array(scores)
 
-def create_new_features(df:pd.DataFrame, info=False, dropped_columns = []) -> pd.DataFrame:
+#returns 1 if it is day time and 0 if it is nighttime
+#rough estimate
+def get_is_day(df:pd.DataFrame):
+    days = []
+    #loop through every data point
+    for (i,v) in df.iterrows():
+        # if the time is between 8 and 18 we are in daytime
+        if v["hour_of_day"] > 8 and v["hour_of_day"] < 18:
+            days.append(1)
+        #otherwise it is nighttime
+        else:
+            days.append(0)
+    return days
+
+def create_new_features(df:pd.DataFrame, info=False, dropped_columns = ["snow"]) -> pd.DataFrame:
     '''Drops and adds/creates new features'''
 
     extended_df = df.copy()
     original_columns = df.columns
 
     # drop snow (it only has 0 values -> no information)
-    extended_df.drop('snow', axis=1, inplace=True)
     for column in dropped_columns:
-        extended_df.drop(column, axis=1)
+        extended_df.drop(column, axis=1, inplace=True)
 
     # add new (derived/composite) features
     # TODO
@@ -24,7 +54,8 @@ def create_new_features(df:pd.DataFrame, info=False, dropped_columns = []) -> pd
     
     #making column for Farenheit since it is the superior temperature measure
     extended_df["temp_fahrenheit"] = round((extended_df["temp"] * 9/5) + 32)
-    
+    extended_df["good_weather"] = get_good_weather_score(extended_df)
+    extended_df["is_day"] = get_is_day(extended_df)
     extended_columns = extended_df.columns
     if info:
         dropped_columns = np.setdiff1d(original_columns, extended_columns)
@@ -95,7 +126,7 @@ def create_splits(df:pd.DataFrame, split_prec:dict, info=False, is_random = Fals
     return splits
 
 
-def process_data(split_prec: dict, scaler = None,dropped_columns = [], is_random = False):
+def process_data(split_prec: dict, scaler = None,dropped_columns = ["snow"], is_random = False):
     # find the project directory and load the data
     project_dir = os.path.abspath(os.path.join('..'))
     data_path = os.path.join(project_dir,'data', 'training_data_fall2024.csv')
@@ -109,6 +140,7 @@ def process_data(split_prec: dict, scaler = None,dropped_columns = [], is_random
     
     ## 2. Create and drop features
     processed_df = create_new_features(processed_df, info=True,dropped_columns=dropped_columns)
+    print(processed_df)
 
     ## 3. Shuffle and split
     splits = create_splits(processed_df, split_prec, info=True, is_random=is_random)
