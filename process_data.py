@@ -153,10 +153,26 @@ def process_data(split_prec: dict, scaler = None,dropped_columns = ["snow"], is_
     if type(scaler) == skl_pre._data.StandardScaler or type(scaler) == skl_pre._data.MinMaxScaler:
         scaler = scaler.fit(splits[0])
         splits[0] = pd.DataFrame(scaler.transform(splits[0]),columns=x_cols)
-        if len(splits) >= 4:
+        #we only have training data
+        if len(splits) < 4:
+            #need to reset the index of the training
+            splits[1] = (splits[1].reset_index()).drop("index",axis = 1)
+        #if we have training and test data
+        if len(splits) == 4:
+            #scaling the testing data and making it a dataframe
             splits[1] = pd.DataFrame(scaler.transform(splits[1]),columns=x_cols)
+            #need to reset indecies of the y_train and y_test since Xs are reset
+            splits[2] = (splits[2].reset_index()).drop("index",axis = 1)
+            splits[3] = (splits[3].reset_index()).drop("index",axis = 1)
+        #if we have training, validation, and testing data
         if len(splits) > 4:
+            #fitting the validation and testing data
+            splits[1] = pd.DataFrame(scaler.transform(splits[1]),columns=x_cols)
             splits[2] = pd.DataFrame(scaler.transform(splits[2]),columns=x_cols)
+            #resetting indecies for y values
+            (splits[3].reset_index()).drop("index",axis = 1)
+            (splits[4].reset_index()).drop("index",axis = 1)
+            (splits[5].reset_index()).drop("index",axis = 1)
     # print(splits)
 
     return splits
