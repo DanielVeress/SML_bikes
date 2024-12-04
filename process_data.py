@@ -140,21 +140,23 @@ def process_data(split_prec: dict, scaler = None,dropped_columns = ["snow"], is_
     
     ## 2. Create and drop features
     processed_df = create_new_features(processed_df, info=True,dropped_columns=dropped_columns)
-    print(processed_df)
+    #print(processed_df)
+    x_cols = processed_df.columns.tolist()
+    x_cols.remove("increase_stock")
 
     ## 3. Shuffle and split
     splits = create_splits(processed_df, split_prec, info=True, is_random=is_random)
-
+    # print(splits)
     #if the scaler needs to be fitted to the data that is done here
     #the scaler is fitted to the training data and then the validation and testing X data is fitted 
     #with the scaler that the training data was fitted with
     if type(scaler) == skl_pre._data.StandardScaler or type(scaler) == skl_pre._data.MinMaxScaler:
         scaler = scaler.fit(splits[0])
-        splits[0] = scaler.transform(splits[0])
+        splits[0] = pd.DataFrame(scaler.transform(splits[0]),columns=x_cols)
         if len(splits) >= 4:
-            splits[1] = scaler.transform(splits[1])
+            splits[1] = pd.DataFrame(scaler.transform(splits[1]),columns=x_cols)
         if len(splits) > 4:
-            splits[2] = scaler.transform(splits[2])
+            splits[2] = pd.DataFrame(scaler.transform(splits[2]),columns=x_cols)
     # print(splits)
 
     return splits
