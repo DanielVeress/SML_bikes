@@ -126,7 +126,10 @@ def create_splits(df:pd.DataFrame, split_prec:dict, info=False, is_random = Fals
     return splits
 
 
-def process_data(split_prec: dict, scaler = None,dropped_columns = ["snow"], is_random = False):
+def process_data(split_prec: dict = {
+    'train': 0.8, 
+    'test': 0.2,
+}, scaler = skl_pre.MinMaxScaler(), dropped_columns = ["snow"], is_random = False):
     # find the project directory and load the data
     project_dir = os.path.abspath(os.path.join('..'))
     data_path = os.path.join(project_dir,'data', 'training_data_fall2024.csv')
