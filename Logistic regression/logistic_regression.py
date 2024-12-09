@@ -4,6 +4,8 @@ Created on Mon Dec  2 14:14:46 2024
 
 @author: olivi
 """
+import sys
+sys.path.append("..")
 
 from process_data import process_data
 from sklearn import linear_model
@@ -16,51 +18,107 @@ import statsmodels.api as sm
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from mlxtend.feature_selection import SequentialFeatureSelector
+from sklearn.model_selection import RandomizedSearchCV
+from scipy.stats import uniform
+
+from evaluate import evaluate_pred
+from visualization import plot_confusion_matrix
+from sklearn.metrics import confusion_matrix
+
+import statistics
+from sklearn.model_selection import GridSearchCV,StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+def analyze_features(X_train,best_model):
+    coefficients = best_model.named_steps['logisticregression'].coef_.flatten()  # Flatten in case of binary classification
+    feature_names = X_train.columns
+    # Create a DataFrame
+    feature_strength = pd.DataFrame({
+        'Feature': feature_names,
+        'Coefficient': coefficients
+    })
+    
+    # Sort by absolute coefficient value
+    feature_strength['AbsCoefficient'] = feature_strength['Coefficient'].abs()
+    feature_strength = feature_strength.sort_values(by='AbsCoefficient', ascending=False)
+
+    # Print feature strength
+    print(feature_strength)
+    
 
 
 def logistic_regression():
-    X_train, X_val, X_test, Y_train, Y_val, Y_test = process_data()
-    del X_train['snow']
-    del X_test['snow']
-    print(X_train.shape)
-    print(X_train.columns)
    
-    
-    # logr = linear_model.LogisticRegression()
-    # logr.fit(X_train,Y_train)
-    # print(logr.get_params())
-    
-    # predict_prob = logr.predict_proba(X_test)
-    # print(logr.classes_)
-    # print(predict_prob[0:5])
-    
-    # Perform feature selection
-    select_percentile = SelectPercentile(score_func=f_classif,percentile=20)
-    X_new = select_percentile.fit_transform(X_train, Y_train)
-    print("Shape after SelectPercentile:", X_new.shape)
-    # Get the selected feature names
-    selected_feature_names = X_train.columns[select_percentile.get_support()]
+    X_train, X_test,  Y_train, Y_test= process_data({"train": 0.8, "test": 0.2}, is_random=False)
+    Y_train = np.array(Y_train).ravel()
 
-    # Create a DataFrame for the transformed X_test
-    X_test_new = pd.DataFrame(X_test, columns=selected_feature_names)
-    print(X_test_new.head())
+    # Create a pipeline with scaler and logistic regression
+    pipe = make_pipeline(StandardScaler(), linear_model.LogisticRegression(max_iter=1000, solver='saga', tol=0.1))
+     
+    # Create a parameter grid
+    param_grid = {
+        'logisticregression__C': [0.1, 1, 10, 100],
+        'logisticregression__penalty': ['l1', 'l2']
+    }
+     
+    cv = StratifiedKFold(n_splits=50, shuffle=True)
+    grid_search = GridSearchCV(pipe, param_grid, cv=cv,scoring='accuracy', n_jobs=-1)
     
-    logr = linear_model.LogisticRegression()
-    logr.fit(X_new,Y_train)
-    print(logr.get_params())
+    Y_train =  np.array(Y_train).ravel()
+    # Fit the model
+    grid_search.fit(X_train, Y_train)
+
+    # Get the best parameters and the best model
+    best_params = grid_search.best_params_
+    best_model = grid_search.best_estimator_
+
+    print(f"Best parameters: {best_params}")
     
-    predict_prob = logr.predict_proba(X_test_new)
-    print(logr.classes_)
-    print(predict_prob[0:50:5])
+    print(best_model)
+    analyze_features(X_train,best_model)
     
-    Y_pred = classify(logr,predict_prob)
-    print(Y_pred[0:50:5])
-   # a = get_accuracy(Y_test, Y_pred)
+
+    # Evaluate the best model on the test set
+    predict_prob = best_model.predict_proba(X_test)
+    Y_pred = classify(best_model, predict_prob)
+
+    tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+    
+    print("Acc training: ", accuracy_score(best_model.predict(X_train), Y_train))  
+    print("Acc test: ", get_accuracy(Y_pred, Y_test))  
+
+    print(evaluate_pred(Y_pred, Y_test))
+    return evaluate_pred(Y_pred, Y_test)
+
+
+
+
+  #  print(Y_pred[0:50:5])
+    #a = get_accuracy(Y_test, Y_pred)
     #print(Y_test)
-    #print(a)
-    
+   # print(a)
+ #   print(evaluate_pred(Y_pred, Y_test))
+    # Confusion matrix\n
+  #  tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+  #  confusion_matrix_data = np.array([[tn, fp], [fn, tp]])
+  #  plot_confusion_matrix(confusion_matrix_data)
+  #  "\n",
+  #  print(f'True Positive (TP): {tp}')
+  #  print(f'True Negative (TN): {tn}')
+  #  print(f'False Positive (FP): {fp}')
+  #  print(f'False Negative (FN): {fn}')
+  
+  #  print("Acc training: ", accuracy_score(logr.predict(X_train), Y_train))  
+   # print("Acc test: ", get_accuracy(Y_pred, Y_test))  
+  #  return evaluate_pred(Y_pred, Y_test)
+   
+ 
+
+
+        
 def classify(model,predict_prob):
-    if model.classes_[0] == 'high_bike_demand':
+    if model.classes_[0] == '1':
         high, low = 1,0
     else: 
         high,low = 0,1
@@ -76,51 +134,29 @@ def get_accuracy(Y_true,Y_pred):
     return(accuracy_score(Y_true,Y_pred))
 
 
-logistic_regression()
+
+
+
+def meassure_model(n=100):
+    stats = {"accuracy": [],"recall":[],"precision":[]}
     
-def forward_selection(X, y, threshold_p=0.05, threshold_corr=0.9):
-    selected_features = []
-    remaining_features = list(range(X.shape[1]))
-    correlations = X.corr().abs()
-    while remaining_features:
-        scores = []
-        for feature in remaining_features:
-            features_to_test = selected_features + [feature]
-            X_subset = X[:, features_to_test]
-            
-            # Fitting a model and computing F-score and p-value
-            fscore, _ = f_classif(X_subset, y)
-            model = sm.Logit(y, sm.add_constant(X_subset)).fit(disp=0)
-            pvalue = model.pvalues[1:]  # Skip the constant
-            
-            if all(p <= threshold_p for p in pvalue) and np.mean(fscore) > 0:
-                scores.append((np.mean(fscore), feature))
+    for i in range(n):
+        print(i)
+        pred = logistic_regression()
+        a = pred["accuracy"]
+        r = pred["recall"]
+        p = pred["precision"]
         
-        if not scores:
-            break
+        stats["accuracy"].append(a)
+        stats["recall"].append(r)
+        stats["precision"].append(p)
         
-        scores.sort(reverse=True)  # Sort by F-score descending
-        best_feature = scores[0][1]
-        selected_features.append(best_feature)
-        remaining_features.remove(best_feature)
+    for key,val in stats.items():
+        print(f'{key}: {statistics.mean(val)}, {statistics.variance(val)}')
+        
+            
 
-        # Check correlation
-        for f1 in selected_features:
-            for f2 in selected_features:
-                if f1 != f2 and correlations[f1][f2] > threshold_corr:
-                    if f2 in selected_features:
-                        selected_features.remove(f2)
-    
-    return selected_features
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    logistic_regression()
 
 
