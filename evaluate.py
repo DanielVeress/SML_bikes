@@ -15,6 +15,7 @@ def evaluate_pred(y_pred:Series, y_true:Series):
     metrics['accuracy'] = accuracy_score(y_true, y_pred)
     metrics['recall'] = recall_score(y_true, y_pred)
     metrics['precision'] = precision_score(y_true, y_pred)
+    metrics['mix'] = metrics['accuracy']*metrics['recall']*metrics['precision']*10
 
     return metrics
 
