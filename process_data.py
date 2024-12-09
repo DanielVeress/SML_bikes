@@ -44,10 +44,6 @@ def create_new_features(df:pd.DataFrame, info=False, dropped_columns = ["snow"])
     extended_df = df.copy()
     original_columns = df.columns
 
-    # drop snow (it only has 0 values -> no information)
-    for column in dropped_columns:
-        extended_df.drop(column, axis=1, inplace=True)
-
     # add new (derived/composite) features
     # TODO
     # e.g. create separate columns for each day of the week
@@ -56,6 +52,11 @@ def create_new_features(df:pd.DataFrame, info=False, dropped_columns = ["snow"])
     extended_df["temp_fahrenheit"] = round((extended_df["temp"] * 9/5) + 32)
     extended_df["good_weather"] = get_good_weather_score(extended_df)
     extended_df["is_day"] = get_is_day(extended_df)
+
+    # drop snow (it only has 0 values -> no information)
+    for column in dropped_columns:
+        extended_df.drop(column, axis=1, inplace=True)
+
     extended_columns = extended_df.columns
     if info:
         dropped_columns = np.setdiff1d(original_columns, extended_columns)
