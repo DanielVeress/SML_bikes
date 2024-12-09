@@ -24,3 +24,23 @@ def plot_confusion_matrix(conf_mtx:np.ndarray):
     plt.ylabel('True Label/Demand')
     plt.tight_layout()
     plt.show()
+
+
+def plot_correlations(df, add_annotations=True):
+    corr_mtx = df.corr().round(2)
+
+    plt.figure(figsize=(10, 8))
+    plt.imshow(corr_mtx, cmap='coolwarm', interpolation='nearest')
+    plt.colorbar(label='Correlation Coefficient')
+    plt.title('Correlation Matrix Heatmap')
+    plt.xticks(ticks=range(len(corr_mtx.columns)), labels=corr_mtx.columns, rotation=45, ha='right')
+    plt.yticks(ticks=range(len(corr_mtx.index)), labels=corr_mtx.index)
+    plt.tight_layout()
+
+    # Add annotations
+    if add_annotations:
+        for i in range(len(corr_mtx.columns)):
+            for j in range(len(corr_mtx.columns)):
+                plt.text(j, i, corr_mtx.iloc[i, j], ha='center', va='center', color='black')
+
+    plt.show()
